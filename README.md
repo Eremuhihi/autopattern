@@ -7,7 +7,7 @@ This is a repository for creating and storing cell-based interactive auto patter
 - CMake (3.16+)
 - C++20 compiler
  - Linux: GCC 11+ or Clang 14+
- - Windows: MSVC 2019+ (Visual Studio or Build Tools)
+ - Windows: MSVC 2022 (Visual Studio or Build Tools)
  - macOS: Xcode 14+ (Apple Clang)
 - (Recommended) Ninja build system
 - vcpkg (used as the CMake toolchain for SDL2 and bgfx deps)
@@ -16,26 +16,93 @@ bgfx sources are expected under external/bgfx.cmake (already committed or added 
 
 ## Windows
 ```
-git clone https://github.com/eremuhihi/autopattern autopattern
+vcpkg install sdl2
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
 cd autopattern
-git submodule update --init --recursive
+mkdir build
+cd build
+cmake .. -B build -G "Visual Studio 17 2022" `
+  -A x64 `
+  -DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg.cmake
+cmake --build . --config Release
 ```
 
+## Linux
 ```
-cmake -S . -B build -G "Ninja" `
-  -DCMAKE_BUILD_TYPE=Release `
-  -DCMAKE_TOOLCHAIN_FILE=[path of vcpkg.cmake]
-
-cmake --build build -v
-```
-
-```
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-  -DCMAKE_TOOLCHAIN_FILE=$toolchain
-cmake --build build --config Release
+sudo apt install libsdl2-dev pkg-config
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
+cd autopattern
+mkdir build && cd build
+cmake ..
+cmake --build .
 ```
 
 ## MacOS
+```
+brew install sdl2
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
+cd autopattern
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+
+# Install
+
+## Prerequisites
+
+-   Git (2.30+)
+-   CMake (3.16+)
+-   C++20 compiler
+    -   Linux: GCC 11+ or Clang 14+
+    -   Windows: MSVC 2022 (Visual Studio or Build Tools)
+    -   macOS: Xcode 14+ (Apple Clang)
+-   (Recommended) Ninja build system
+-   vcpkg (used as the CMake toolchain for SDL2 and bgfx dependencies)
+
+bgfx sources are expected under external/bgfx.cmake (already committed
+or added as a submodule).
+
+## Windows
+```
+vcpkg install sdl2
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
+cd autopattern
+git submodule update --init --recursive
+mkdir build
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg.cmake
+cmake --build . --config Release
+```
+Windows requires Visual Studio 2022 and vcpkg to be installed
+beforehand.
+
+## Linux
+```
+sudo apt install libsdl2-dev pkg-config
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
+cd autopattern
+git submodule update --init --recursive
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+On Linux a standard development environment is required, including a
+recent GCC or Clang, make or ninja, and pkg-config. SDL2 development
+headers must also be available.
+
+## macOS
+```
+brew install sdl2
+git clone https://github.com/Eremuhihi/autopattern.git autopattern
+cd autopattern
+git submodule update --init --recursive
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+On macOS Xcode and the Apple command line tools must be installed, along
+with Homebrew for dependency management.
 
 # sample
 ## noise
