@@ -1,7 +1,12 @@
 $input  v_texcoord0
 #include <bgfx_shader.sh>
 
-SAMPLER2D(u_tex0);
+
+#if BGFX_SHADER_LANGUAGE_HLSL
+    SAMPLER2D(u_tex0, 0);
+#else
+    SAMPLER2D(u_tex0);
+#endif
 
 void main()
 {
