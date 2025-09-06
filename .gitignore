@@ -1,0 +1,31 @@
+# Build folders
+/build/
+/out/
+/bin/
+/lib/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Compiled files
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+*.out
+
+# VSCode settings (optional)
+.vscode/
+
+# Logs
+*.log
+*.tmp
+
