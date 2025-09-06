@@ -1,8 +1,10 @@
 {
   "name": "autopattern",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "dependencies": [
-    "sdl2"
+    "sdl2",
+    "bgfx"
   ],
-  "builtin-baseline": "latest"
+  "builtin-baseline": "4acadb7d732e662bbf130c4849be6d3a0aa6f6b9"
 }
+
