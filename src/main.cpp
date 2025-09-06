@@ -9,8 +9,8 @@
 #include <iostream>
 #include <fstream>
 
-constexpr int WINDOW_WIDTH  = 640;
-constexpr int WINDOW_HEIGHT = 480;
+constexpr int WINDOW_WIDTH  = 256;
+constexpr int WINDOW_HEIGHT = 256;
 
 static bool fillPlatformData(SDL_Window* window, bgfx::PlatformData& outPd)
 {
