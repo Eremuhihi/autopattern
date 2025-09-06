@@ -1,7 +1,7 @@
 # AutoPattern
 This is a repository for creating and storing cell-based interactive auto patterns.
 
-（[Japansese README](./docs/assets/README_JP.md)）
+（[Japansese README](./README_JP.md)）
 
 ## Introduction
 AutoPattern is a lightweight framework for experimenting with interactive cell-based patterns. It demonstrates a minimal yet extensible setup using bgfx and SDL2 to render procedural patterns across platforms (Linux, Windows, macOS).
