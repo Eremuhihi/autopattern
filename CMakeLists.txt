@@ -32,24 +32,24 @@ endif()
 add_subdirectory(external/bgfx.cmake)
 
 # ---- Executable ---------------------------------------------------------------
-add_executable(cellauto
+add_executable(autopattern
   src/main.cpp
 )
 
 # Link SDL2 and bgfx stack
-target_link_libraries(cellauto PRIVATE
+target_link_libraries(autopattern PRIVATE
   SDL2::SDL2
   bgfx bimg bx
 )
 
 if(_need_sdl2main)
-  target_link_libraries(cellauto PRIVATE SDL2::SDL2main)
+  target_link_libraries(autopattern PRIVATE SDL2::SDL2main)
 endif()
 
 # Linux-specific system libs
 if(UNIX AND NOT APPLE)
   find_package(Threads REQUIRED)
-  target_link_libraries(cellauto PRIVATE Threads::Threads dl)
+  target_link_libraries(autopattern PRIVATE Threads::Threads dl)
 endif()
 
 # ---- Shader build (cross-platform shaderc) -----------------------------------
@@ -106,17 +106,17 @@ foreach(SH ${SHADERS})
 endforeach()
 
 add_custom_target(shaders ALL DEPENDS ${SHADER_BINARIES})
-add_dependencies(cellauto shaders)
+add_dependencies(autopattern shaders)
 
 # Copy compiled shaders next to the executable
-add_custom_command(TARGET cellauto POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:cellauto>/shaders
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${SHADER_OUT} $<TARGET_FILE_DIR:cellauto>/shaders
+add_custom_command(TARGET autopattern POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:autopattern>/shaders
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${SHADER_OUT} $<TARGET_FILE_DIR:autopattern>/shaders
 )
 
 # ---- macOS runtime path (so bundled dylibs are found) -------------------------
 if(APPLE)
-  set_target_properties(cellauto PROPERTIES
+  set_target_properties(autopattern PROPERTIES
     BUILD_RPATH "@loader_path"
     INSTALL_RPATH "@loader_path"
   )
@@ -124,6 +124,6 @@ endif()
 
 # ---- Install (optional, simple layout) ---------------------------------------
 include(GNUInstallDirs)
-install(TARGETS cellauto RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS autopattern RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY ${SHADER_OUT}/ DESTINATION ${CMAKE_INSTALL_BINDIR}/shaders)
 
