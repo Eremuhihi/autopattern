@@ -1,137 +1,235 @@
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
-#include <bx/math.h>
-#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+#include <vector>
+#include <iostream>
+#include <fstream>
 
-#if defined(_WIN32)
-  #define SDL_SYSWM_TYPE  SDL_SYSWM_WINDOWS
-#elif defined(__APPLE__)
-  #define SDL_SYSWM_TYPE  SDL_SYSWM_COCOA
-#else
-  #define SDL_SYSWM_TYPE  SDL_SYSWM_X11  // WSLg/多くのLinuxでOK（WaylandでもSDLが面倒みる）
-#endif
+constexpr int WINDOW_WIDTH  = 640;
+constexpr int WINDOW_HEIGHT = 480;
 
-static bgfx::PlatformData s_pd{};
-
-static void set_platform_data_from_sdl(SDL_Window* window)
+static bool fillPlatformData(SDL_Window* window, bgfx::PlatformData& outPd)
 {
-  SDL_SysWMinfo wmi;
-  SDL_VERSION(&wmi.version);
-  if (!SDL_GetWindowWMInfo(window, &wmi)) {
-    std::fprintf(stderr, "SDL_GetWindowWMInfo failed: %s\n", SDL_GetError());
-    return;
-  }
-
-  // すべて nullptr で初期化
-  s_pd.ndt = nullptr; s_pd.nwh = nullptr; s_pd.context = nullptr; s_pd.backBuffer = nullptr; s_pd.backBufferDS = nullptr;
-
+    SDL_SysWMinfo wmi;
+    SDL_VERSION(&wmi.version);
+    if (!SDL_GetWindowWMInfo(window, &wmi)) {
+        std::cerr << "SDL_GetWindowWMInfo failed: " << SDL_GetError() << "\n";
+        return false;
+    }
+    outPd = {};
 #if defined(_WIN32)
-  s_pd.nwh = wmi.info.win.window;
+    outPd.nwh = wmi.info.win.window;
+    outPd.ndt = nullptr;
+    return true;
 #elif defined(__APPLE__)
-  s_pd.nwh = wmi.info.cocoa.window;
+    outPd.nwh = wmi.info.cocoa.window;
+    outPd.ndt = nullptr;
+    return true;
 #else
-  // X11 / Wayland など。SDL が抽象化してくれるが bgfx にはハンドルが必要
-  // X11 の場合:
-  if (wmi.subsystem == SDL_SYSWM_X11) {
-    s_pd.ndt = wmi.info.x11.display;
-    s_pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-  }
-  // Wayland の場合（SDL 2.0.22+）
-  if (wmi.subsystem == SDL_SYSWM_WAYLAND) {
-    s_pd.ndt = wmi.info.wl.display;
-    s_pd.nwh = wmi.info.wl.surface;
-  }
+    switch (wmi.subsystem) {
+    case SDL_SYSWM_X11:
+        outPd.ndt = wmi.info.x11.display;
+        outPd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
+        return true;
+    case SDL_SYSWM_WAYLAND:
+        outPd.ndt = wmi.info.wl.display;
+        outPd.nwh = wmi.info.wl.surface;
+        return true;
+    default:
+        std::cerr << "Unsupported SDL subsystem\n";
+        return false;
+    }
 #endif
-  bgfx::setPlatformData(s_pd);
 }
 
-int main(int argc, char** argv)
+static const bgfx::Memory* loadFile(const char* path)
 {
-  (void)argc; (void)argv;
-  if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
-    std::fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
-    return 1;
-  }
+    std::ifstream ifs(path, std::ios::binary);
+    if (!ifs) return nullptr;
+    std::vector<char> data((std::istreambuf_iterator<char>(ifs)),
+                            std::istreambuf_iterator<char>());
+    const bgfx::Memory* mem = bgfx::copy(data.data(), (uint32_t)data.size());
+    return mem;
+}
 
-  const int width = 1280, height = 720;
-  SDL_Window* window = SDL_CreateWindow("cellauto-bgfx",
-      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-      width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-  if (!window) {
-    std::fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
-    return 1;
-  }
+static bgfx::ShaderHandle loadShader(const char* path)
+{
+    const bgfx::Memory* mem = loadFile(path);
+    if (!mem) {
+        std::cerr << "Failed to load shader: " << path << "\n";
+        return BGFX_INVALID_HANDLE;
+    }
+    return bgfx::createShader(mem);
+}
 
-  // bgfx: ウィンドウハンドルを渡す
-  set_platform_data_from_sdl(window);
+static bgfx::ProgramHandle loadProgram(const char* vsBin, const char* fsBin)
+{
+    bgfx::ShaderHandle vsh = loadShader(vsBin);
+    bgfx::ShaderHandle fsh = loadShader(fsBin);
+    if (!bgfx::isValid(vsh) || !bgfx::isValid(fsh)) {
+        if (bgfx::isValid(vsh)) bgfx::destroy(vsh);
+        if (bgfx::isValid(fsh)) bgfx::destroy(fsh);
+        return BGFX_INVALID_HANDLE;
+    }
+    return bgfx::createProgram(vsh, fsh, true);
+}
 
-  // レンダラは自動選択（Windows/D3D, Linux/Vulkan/GL, macOS/Metal）
-  bgfx::Init init;
-  init.type = bgfx::RendererType::Count; // Auto
-  init.vendorId = BGFX_PCI_ID_NONE;
-  init.resolution.width  = width;
-  init.resolution.height = height;
-  init.resolution.reset  = BGFX_RESET_VSYNC;
+struct PosUv { float x,y,z, u,v; };
 
-  if (!bgfx::init(init)) {
-    std::fprintf(stderr, "bgfx::init failed\n");
-    return 1;
-  }
+int main()
+{
+    SDL_Init(SDL_INIT_VIDEO);
 
-  // ビューポート
-  bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x223344ff, 1.0f, 0);
-  bgfx::setViewRect(0, 0, 0, uint16_t(width), uint16_t(height));
-
-  bool quit = false;
-  bool paused = false;
-  uint64_t lastTicks = SDL_GetTicks64();
-  float t = 0.0f;
-
-  while (!quit) {
-    SDL_Event ev;
-    while (SDL_PollEvent(&ev)) {
-      if (ev.type == SDL_QUIT) quit = true;
-      if (ev.type == SDL_KEYDOWN) {
-        if (ev.key.keysym.sym == SDLK_ESCAPE) quit = true;
-        if (ev.key.keysym.sym == SDLK_SPACE)  paused = !paused;
-      }
-      if (ev.type == SDL_WINDOWEVENT &&
-          (ev.window.event == SDL_WINDOWEVENT_RESIZED ||
-           ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED))
-      {
-        int w, h; SDL_GetWindowSize(window, &w, &h);
-        bgfx::reset((uint32_t)w, (uint32_t)h, BGFX_RESET_VSYNC);
-        bgfx::setViewRect(0, 0, 0, (uint16_t)w, (uint16_t)h);
-      }
+    int ww = WINDOW_WIDTH, wh = WINDOW_HEIGHT;
+    SDL_Window* window = SDL_CreateWindow(
+        "noise",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        ww, wh,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+    );
+    if (!window) {
+        std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << "\n";
+        return 1;
     }
 
-    // 背景色をゆっくり変える（シェーダ不要の可視フィードバック）
-    uint64_t now = SDL_GetTicks64();
-    float dt = float(now - lastTicks)*0.001f;
-    lastTicks = now;
-    if (!paused) t += dt;
+    bgfx::PlatformData pd{};
+    if (!fillPlatformData(window, pd)) {
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+    bgfx::setPlatformData(pd);
 
-    uint8_t r = uint8_t((std::sin(t*0.7f)*0.5f + 0.5f)*255);
-    uint8_t g = uint8_t((std::sin(t*0.9f + 2.0f)*0.5f + 0.5f)*255);
-    uint8_t b = uint8_t((std::sin(t*1.3f + 4.0f)*0.5f + 0.5f)*255);
-    uint32_t abgr = 0xff000000 | (uint32_t(r)      ) | (uint32_t(g)<<8) | (uint32_t(b)<<16);
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, abgr, 1.0f, 0);
+    // === OpenGL を明示（CMake は GLSL 150 を出力） ===
+    bgfx::Init init{};
+#if defined(_WIN32)
+    init.type = bgfx::RendererType::Direct3D11;
+#elif defined(__APPLE__)
+    init.type = bgfx::RendererType::Metal;
+#else
+    init.type = bgfx::RendererType::OpenGL;
+#endif
+    init.platformData = pd;
+    init.resolution.width  = (uint32_t)ww;
+    init.resolution.height = (uint32_t)wh;
+    init.resolution.reset  = BGFX_RESET_VSYNC;
+    if (!bgfx::init(init)) {
+        std::cerr << "bgfx::init failed\n";
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
 
-    bgfx::touch(0); // 何も描かなくても view 0 を“生かす”
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR, 0xff0000ff);
+    bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
+    bgfx::setViewRect(0, 0, 0, (uint16_t)ww, (uint16_t)wh);
 
-    // デバッグテキスト（シェーダなしで文字表示できる）
-    bgfx::dbgTextClear();
-    bgfx::dbgTextPrintf(0, 0, 0x0f, "cellauto-bgfx : bgfx + SDL2 minimal");
-    bgfx::dbgTextPrintf(0, 1, 0x0a, "[Space] pause=%s, [Esc] quit", paused ? "true" : "false");
+    // プログラム（bin は実行ファイルの横の shaders/ にある想定）
+    bgfx::ProgramHandle program = loadProgram(
+        "shaders/vs_fullscreen.bin",
+        "shaders/fs_texture.bin"
+    );
+    if (!bgfx::isValid(program)) {
+        std::cerr << "Failed to load shader program.\n";
+        bgfx::shutdown(); SDL_DestroyWindow(window); SDL_Quit();
+        return 1;
+    }
 
-    bgfx::frame();
-  }
+    // uniform
+    bgfx::UniformHandle u_tex0 = bgfx::createUniform("u_tex0", bgfx::UniformType::Sampler);
 
-  bgfx::shutdown();
-  SDL_DestroyWindow(window);
-  SDL_Quit();
-  return 0;
+    // フルスクリーン四角形
+    bgfx::VertexLayout layout;
+    layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+    .end();
+
+    const PosUv quadVerts[] = {
+        {-1.f,-1.f,0.f, 0.f,1.f},
+        { 1.f,-1.f,0.f, 1.f,1.f},
+        { 1.f, 1.f,0.f, 1.f,0.f},
+        {-1.f, 1.f,0.f, 0.f,0.f},
+    };
+    const uint16_t quadIdx[] = { 0,1,2, 0,2,3 };
+
+    bgfx::VertexBufferHandle vbh = bgfx::createVertexBuffer(
+        bgfx::copy(quadVerts, sizeof(quadVerts)), layout);
+    bgfx::IndexBufferHandle ibh = bgfx::createIndexBuffer(
+        bgfx::copy(quadIdx, sizeof(quadIdx)));
+
+    // 1枚のテクスチャを毎フレーム更新
+    bgfx::TextureHandle tex = bgfx::createTexture2D(
+        (uint16_t)ww, (uint16_t)wh, false, 1,
+        bgfx::TextureFormat::BGRA8, 0);
+
+    std::vector<uint32_t> pixels((size_t)ww * (size_t)wh);
+    std::srand((unsigned)std::time(nullptr));
+
+    bool running = true;
+    SDL_Event event;
+    while (running) {
+        bool resized = false;
+
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_WINDOWEVENT &&
+               (event.window.event == SDL_WINDOWEVENT_RESIZED ||
+                event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)) {
+                resized = true;
+            }
+        }
+
+        if (resized) {
+            SDL_GetWindowSize(window, &ww, &wh);
+            if (ww < 1) ww = 1;
+            if (wh < 1) wh = 1;
+
+            bgfx::reset((uint32_t)ww, (uint32_t)wh, BGFX_RESET_VSYNC);
+            bgfx::setViewRect(0, 0, 0, (uint16_t)ww, (uint16_t)wh);
+
+            if (bgfx::isValid(tex)) bgfx::destroy(tex);
+            tex = bgfx::createTexture2D((uint16_t)ww, (uint16_t)wh, false, 1,
+                                        bgfx::TextureFormat::BGRA8, 0);
+            pixels.assign((size_t)ww * (size_t)wh, 0);
+        }
+
+        // 乱数画像を埋める（白/黒）
+        for (size_t i = 0, n = pixels.size(); i < n; ++i) {
+            bool white = (std::rand() & 1) == 0;
+            pixels[i] = white ? 0xFFFFFFFFu : 0xFF000000u;
+        }
+
+        // テクスチャ更新
+        const bgfx::Memory* mem =
+            bgfx::copy(pixels.data(), (uint32_t)(pixels.size() * sizeof(uint32_t)));
+        bgfx::updateTexture2D(tex, 0, 0, 0, 0, (uint16_t)ww, (uint16_t)wh, mem);
+
+        // 描画
+        bgfx::touch(0);
+        bgfx::setTexture(0, u_tex0, tex);
+        bgfx::setVertexBuffer(0, vbh);
+        bgfx::setIndexBuffer(ibh);
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
+        bgfx::submit(0, program);
+
+        bgfx::frame();
+        //std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    }
+
+    if (bgfx::isValid(tex)) bgfx::destroy(tex);
+    if (bgfx::isValid(ibh)) bgfx::destroy(ibh);
+    if (bgfx::isValid(vbh)) bgfx::destroy(vbh);
+    if (bgfx::isValid(u_tex0)) bgfx::destroy(u_tex0);
+    if (bgfx::isValid(program)) bgfx::destroy(program);
+
+    bgfx::shutdown();
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 0;
 }
 

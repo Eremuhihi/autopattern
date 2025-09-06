@@ -29,3 +29,17 @@ Makefile
 *.log
 *.tmp
 
+# vcpkg のビルド生成物
+/vcpkg_installed/
+/vcpkg-manifest-install.log
+
+# bgfx の生成物
+/shaders_built/
+
+# Ninja / CMake の補助
+rules.ninja
+TargetDirectories.txt
+
+# IDE 系 (任意)
+.idea/
+.DS_Store
