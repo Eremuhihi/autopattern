@@ -20,7 +20,7 @@ int main()
 
     int ww = WINDOW_WIDTH, wh = WINDOW_HEIGHT;
     SDL_Window* window = SDL_CreateWindow(
-        "noise",
+        "autopattern",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         ww, wh,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
@@ -34,6 +34,8 @@ int main()
 
     bool running = true;
     SDL_Event event;
+    
+    SDL_SetWindowTitle(window, noise.name().c_str());
     while (running) {
         bool resized = false;
 
@@ -41,7 +43,6 @@ int main()
             if (event.type == SDL_QUIT) running = false;
             noise.event(window, event);
         }
-        
         noise.draw();
     }
 
