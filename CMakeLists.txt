@@ -28,6 +28,21 @@ endif()
 # ---- bgfx subproject ----------------------------------------------------------
 add_subdirectory(external/bgfx.cmake)
 
+# ---- Library ------------------------------------------------------------------
+add_library(atpt STATIC
+  src/panel.cpp
+  src/noise.cpp
+)
+
+target_link_libraries(atpt PRIVATE
+  SDL2::SDL2
+  bgfx bimg bx
+)
+
+target_include_directories(atpt PUBLIC
+  ${PROJECT_SOURCE_DIR}/include
+)
+
 # ---- Executable ---------------------------------------------------------------
 add_executable(autopattern
   src/main.cpp
@@ -36,6 +51,7 @@ add_executable(autopattern
 target_link_libraries(autopattern PRIVATE
   SDL2::SDL2
   bgfx bimg bx
+  atpt
 )
 
 target_compile_definitions(autopattern PRIVATE SDL_MAIN_HANDLED)
@@ -117,4 +133,5 @@ endif()
 include(GNUInstallDirs)
 install(TARGETS autopattern RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY ${SHADER_OUT}/ DESTINATION ${CMAKE_INSTALL_BINDIR}/shaders)
-
+install(TARGETS atpt ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

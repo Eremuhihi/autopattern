@@ -13,7 +13,6 @@ AutoPattern は、インタラクティブなセルベースの自動で動く�
     -   Linux: GCC 11+ または Clang 14+
     -   Windows: MSVC 2022 (Visual Studio または Build Tools)
     -   macOS: Xcode 14+ (Apple Clang)
--   （推奨）Ninja ビルドシステム
 -   vcpkg（SDL2 や bgfx の依存関係を CMake toolchain として使用）
 
 bgfx のソースコードは external/bgfx.cmake に配置されていることを想定しています（リポジトリに含まれているか、サブモジュールとして追加）。
@@ -30,7 +29,7 @@ mkdir build
 cd build
 cmake .. -G "Visual Studio 17 2022" `
   -A x64 `
-  -DCMAKE_TOOLCHAIN_FILE=C:[PATH TO YOUR VCPKG]\scripts\buildsystems\vcpkg.cmake
+  -DCMAKE_TOOLCHAIN_FILE=[PATH TO YOUR VCPKG]\scripts\buildsystems\vcpkg.cmake
 cmake --build . --config Release
 
 .\Release\autopattern.exe
