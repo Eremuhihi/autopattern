@@ -95,7 +95,7 @@ namespace atpt{
 
 
         // Vertex Shader
-        bgfx::ShaderHandle _vsh = BGFX_INVALID_HANDLE;
+        _vsh = BGFX_INVALID_HANDLE;
         {
             std::ifstream ifs("shaders/vs_fullscreen.bin", std::ios::binary);
             if (!ifs) {
@@ -114,7 +114,7 @@ namespace atpt{
         }
 
         // Fragment Shader
-        bgfx::ShaderHandle _fsh = BGFX_INVALID_HANDLE;
+        _fsh = BGFX_INVALID_HANDLE;
         {
             std::ifstream ifs(fs_path_, std::ios::binary);
             if (!ifs) {
@@ -213,8 +213,13 @@ namespace atpt{
                 return ret;
             }
         }else{
-            this->_event(e_);
+            if (int ret = this->_event(e_)){
+                std::cerr << "event error" << std::endl;
+                return ret;
+            };
         }
+
+        return 0;
     }
     
     auto Panel::destroy (void)
