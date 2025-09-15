@@ -33,7 +33,7 @@ mkdir build
 cd build
 cmake .. -G "Visual Studio 17 2022" `
   -A x64 `
-  -DCMAKE_TOOLCHAIN_FILE=C:[PATH TO YOUR VCPKG]\scripts\buildsystems\vcpkg.cmake
+  -DCMAKE_TOOLCHAIN_FILE=[PATH TO YOUR VCPKG]\scripts\buildsystems\vcpkg.cmake
 cmake --build . --config Release
 
 .\Release\autopattern.exe
