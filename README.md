@@ -15,7 +15,6 @@ AutoPattern is a lightweight framework for experimenting with interactive cell-b
     -   Linux: GCC 11+ or Clang 14+
     -   Windows: MSVC 2022 (Visual Studio or Build Tools)
     -   macOS: Xcode 14+ (Apple Clang)
--   (Recommended) Ninja build system
 -   vcpkg (used as the CMake toolchain for SDL2 and bgfx dependencies)
 
 bgfx sources are expected under external/bgfx.cmake (already committed
