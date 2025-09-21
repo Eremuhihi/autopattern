@@ -74,7 +74,8 @@ macOS では Xcode および Apple のコマンドラインツール、依存関
 ## サンプル
 | 名前 | 説明 | 動画 |
 |------|------|------|
-| noise | 最もシンプルな例として作成された、ノイズによる模様です。 | ![noise pattern](docs/assets/videos/noise.gif) |
+| noise     | 最もシンプルな例として作成された、ノイズによる模様です。        | ![noise pattern](docs/assets/videos/noise.gif) |
+| bad noise | 非常に質の悪い乱数によって生成された周期性のあるノイズ模様です。| ![bad noise pattern](docs/assets/videos/bad_noise.gif) |
 
 ## ライセンス
 このプロジェクトは MIT License の下でライセンスされています。詳細は [LICENSE](./LICENSE) ファイルを参照してください。

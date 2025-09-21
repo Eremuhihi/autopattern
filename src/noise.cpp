@@ -7,7 +7,7 @@ namespace atpt{
         : Panel    ( "Noise", wd_, "shaders/fs_texture.bin" )
         , _uh      ( bgfx::createUniform("u_tex0", bgfx::UniformType::Sampler) )
         , _th      ( bgfx::createTexture2D(static_cast<uint16_t>(_width), static_cast<uint16_t>(_height), false, 1, bgfx::TextureFormat::BGRA8, 0) )
-        , _pixels ( _width * _height )
+        , _pixels  ( _width * _height )
         , _seed    { seed_ }
         , _mt      ( _seed )
     {
