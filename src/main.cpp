@@ -13,10 +13,10 @@
 #include <noise.hpp>
 #include <bad_noise.hpp>
 
-//constexpr int WINDOW_WIDTH  = 1280;
-constexpr int WINDOW_WIDTH  = 256;
-//constexpr int WINDOW_HEIGHT = 720;
-constexpr int WINDOW_HEIGHT = 256;
+constexpr int WINDOW_WIDTH  = 1280;
+constexpr int WINDOW_HEIGHT = 720;
+//constexpr int WINDOW_WIDTH  = 256;
+//constexpr int WINDOW_HEIGHT = 256;
 
 int main()
 {
