@@ -35,60 +35,6 @@ namespace atpt{
         , _vbh           { }
         , _ibh           { }    
     {
-        bgfx::PlatformData pd{};
-        SDL_SysWMinfo wmi;
-        SDL_VERSION(&wmi.version);
-        if (!SDL_GetWindowWMInfo(wdh_, &wmi)) {
-            std::cerr << "SDL_GetWindowWMInfo failed: " << SDL_GetError() << "\n";
-            SDL_DestroyWindow(wdh_);
-            SDL_Quit();
-        }
-        pd = {};
-#if defined(_WIN32)
-        pd.nwh = wmi.info.win.window;
-        pd.ndt = nullptr;
-#elif defined(__APPLE__)
-        pd.nwh = wmi.info.cocoa.window;
-        pd.ndt = nullptr;
-#else
-        switch (wmi.subsystem) {
-        case SDL_SYSWM_X11:
-            pd.ndt = wmi.info.x11.display;
-            pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-            break;
-        case SDL_SYSWM_WAYLAND:
-            pd.ndt = wmi.info.wl.display;
-            pd.nwh = wmi.info.wl.surface;
-            break;
-        default:
-            std::cerr << "Unsupported SDL subsystem\n";
-            SDL_DestroyWindow(wdh_);
-            SDL_Quit();
-            break;
-        }
-#endif
-    
-        bgfx::setPlatformData(pd);
-
-        // === OpenGL を明示（CMake は GLSL 150 を出力） ===
-        bgfx::Init init{};
-#if defined(_WIN32)
-        init.type = bgfx::RendererType::Direct3D11;
-#elif defined(__APPLE__)
-        init.type = bgfx::RendererType::Metal;
-#else
-        init.type = bgfx::RendererType::OpenGL;
-#endif
-        init.platformData = pd;
-        init.resolution.width  = static_cast<uint32_t>(_width);
-        init.resolution.height = static_cast<uint32_t>(_height);
-        init.resolution.reset  = BGFX_RESET_VSYNC;
-        if (!bgfx::init(init)) {
-            std::cerr << "bgfx::init failed\n";
-            SDL_DestroyWindow(wdh_);
-            SDL_Quit();
-        }
-
         bgfx::setViewClear(0, BGFX_CLEAR_COLOR, 0xff0000ff);
         bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
         bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(_width), static_cast<uint16_t>(_height));
@@ -189,7 +135,7 @@ namespace atpt{
     }
     
    
-    auto Panel::event (SDL_Window* wd_h_, const SDL_Event& e_)
+    auto Panel::event (const SDL_Event& e_)
         -> int
     {
         if (e_.type == SDL_WINDOWEVENT and

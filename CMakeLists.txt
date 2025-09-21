@@ -31,7 +31,9 @@ add_subdirectory(external/bgfx.cmake)
 # ---- Library ------------------------------------------------------------------
 add_library(atpt STATIC
   src/panel.cpp
+  src/panel_set.cpp
   src/noise.cpp
+  src/bad_noise.cpp
 )
 
 target_link_libraries(atpt PRIVATE

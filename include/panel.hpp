@@ -35,16 +35,21 @@ namespace atpt{
         Panel (const std::string&, SDL_Window*, const std::filesystem::path&);
 
         public:
+        //_ Destructor
+        virtual ~Panel () = default;
+
+        public:
         //_ Getter
-        auto width   (void) -> int                          { return _width; }
-        auto height  (void) -> int                          { return _height; }
-        auto name    (void) -> const std::string&           { return _name; }
+        auto width  (void) -> int                { return _width; }
+        auto height (void) -> int                { return _height; }
+        auto name   (void) -> const std::string& { return _name; }
+        auto window (void) -> SDL_Window*        { return _wh; }  
         
         //_ Variable Function
         public:
-        auto draw    (void)                          -> int;
-        auto event   (SDL_Window*, const SDL_Event&) -> int;
-        auto destroy (void)                          -> int;
+        auto draw    (void)             -> int;
+        auto event   (const SDL_Event&) -> int;
+        auto destroy (void)             -> int;
         
 
         protected:
