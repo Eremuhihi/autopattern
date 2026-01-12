@@ -33,7 +33,7 @@ namespace atpt{
         for (size_t i = 0; i < _pixels.size(); ++i) {
             uint32_t tmp = ((_invar >> 0) ^ (_invar >> 2)) & 1;
             _invar = (_invar >> 1) | (tmp << 31);
-            _pixels[i] = (_invar & 1) ? 0xFFFFFFFFu : 0xFF000000u;
+            _pixels[i] = (_invar & 1) ? 0xFF13A00Eu : 0xFF000000u;
         }
 
         // pixels → GPUに転送

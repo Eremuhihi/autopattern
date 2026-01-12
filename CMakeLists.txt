@@ -34,6 +34,7 @@ add_library(atpt STATIC
   src/panel_set.cpp
   src/noise.cpp
   src/bad_noise.cpp
+  src/conway_ca.cpp
 )
 
 target_link_libraries(atpt PRIVATE
