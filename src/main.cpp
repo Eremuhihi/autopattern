@@ -12,11 +12,12 @@
 #include <panel_set.hpp>
 #include <noise.hpp>
 #include <bad_noise.hpp>
+#include <conway_ca.hpp>
 
-constexpr int WINDOW_WIDTH  = 1280;
-constexpr int WINDOW_HEIGHT = 720;
-//constexpr int WINDOW_WIDTH  = 256;
-//constexpr int WINDOW_HEIGHT = 256;
+//constexpr int WINDOW_WIDTH  = 1280;
+//constexpr int WINDOW_HEIGHT = 720;
+constexpr int WINDOW_WIDTH  = 256;
+constexpr int WINDOW_HEIGHT = 256;
 
 int main()
 {
@@ -99,8 +100,9 @@ int main()
     atpt::PanelSet panels(window);
 
     // Add two panels (Noise and BadNoise)
-    atpt::Noise& noise        = panels.createPanel<atpt::Noise>(window, 19937);
+    atpt::Noise&    noise     = panels.createPanel<atpt::Noise>(window, 19937);
     atpt::BadNoise& bad_noise = panels.createPanel<atpt::BadNoise>(window);
+    atpt::ConwayCA& conway_ca = panels.createPanel<atpt::ConwayCA>(window, 19937);
 
     bool running = true;
     SDL_Event event;

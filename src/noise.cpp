@@ -31,7 +31,7 @@ namespace atpt{
         -> int
     {
         for (size_t i = 0; i < _pixels.size(); ++i) {
-            _pixels[i] = (_mt() & 1) ? 0xFFFFFFFFu : 0xFF000000u;
+            _pixels[i] = (_mt() & 1) ? 0xFF13A00Eu : 0xFF000000u;
         }
 
         // pixels → GPUに転送
